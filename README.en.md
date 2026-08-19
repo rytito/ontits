@@ -168,7 +168,7 @@ strengthen Andean communities of fermented-food micro-producers* — a
 **VLIR-UOS Short Initiative** (KU Leuven project
 [3M250529](https://research.kuleuven.be/portal/nl/project/3M250529), funding
 reference PE2025SIN468A101, 2025–2027). Coordinated by KU Leuven (Molecular
-Bacteriology Lab, Rega Institute; promoter Jeroen Raes) with Universidad
+Bacteriology Lab, Rega Institute) with Universidad
 Nacional del Centro del Perú (UNCP) and Andean micro-producer communities.
 
 ## License
