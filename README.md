@@ -195,7 +195,7 @@ VLIR-UOS** (proyecto KU Leuven
 referencia de financiamiento PE2025SIN468A101, 2025–2027).
 
 - **Institución coordinadora:** KU Leuven — Laboratorio de Bacteriología
-  Molecular, Instituto Rega (promotor: Jeroen Raes)
+  Molecular, Instituto Rega
 - **Instituciones socias:** Universidad Nacional del Centro del Perú (UNCP) y
   comunidades andinas de microproductores
 - **Financiamiento:** VLIR-UOS (Vlaamse Interuniversitaire Raad), programa
