@@ -1,0 +1,17 @@
+SampleID	sample_name	group	replicate	notes
+F1R1	S01	group_a	1
+F1R2	S02	group_a	2
+F1R3	S03	group_a	3
+F1R4	S04	group_a	4
+F2R1	S05	group_b	1
+F2R2	S06	group_b	2
+F2R3	S07	group_b	3
+F2R4	S08	group_b	4
+F3R1	S09	group_c	1
+F3R2	S10	group_c	2
+F3R3	S11	group_c	3
+F3R4	S12	group_c	4
+F4R1	S13	group_d	1
+F4R2	S14	group_d	2
+F4R3	MockCom	control	1	mock community
+F4R4	neg	control	1	negative control

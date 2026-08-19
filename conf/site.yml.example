@@ -1,0 +1,29 @@
+# Copia a conf/site.yml y edita. NO se versiona: las rutas absolutas y el
+# nombre de cuenta son específicos de un clúster.
+#
+#   cp conf/site.yml.example conf/site.yml
+
+account:       lp_myproject
+
+# Instalación estática de Dorado y modelos pre-descargados.
+# Colócalos en almacenamiento del GRUPO. Un directorio personal (home o data)
+# significa que el pipeline se rompe para todos cuando una cuenta cambia.
+dorado_bin:    /shared/software/dorado-2.1.0-linux-x64/bin
+dorado_models: /shared/software/dorado_models
+
+# Entornos conda -- ver docs/USAGE.md para cómo construirlos.
+conda_ont:     /shared/conda_envs/ont
+conda_emu:     /shared/conda_envs/emu
+conda_r:       /shared/conda_envs/r        # opcional; recurre a conda_ont
+
+# Bases de datos de Emu: nombre:ruta[,nombre:ruta]
+#
+# unite (fungi) sola es el valor por defecto sensato. Añade unite_all solo
+# cuando necesites cuantificar co-amplificación de plantas/otros eucariotas.
+emu_dbs:       'unite:/shared/databases/emu_unite_fungi'
+# emu_dbs:     'unite:/shared/databases/emu_unite_fungi,unite_all:/shared/databases/emu_unite_all'
+
+# Hoja de barcodes dual-index (por defecto la del repo: 16 combinaciones
+# KYO2 con barcodes Golay). Sobrescribe solo si cambias el diseño de la
+# librería.
+# barcodes:    /ruta/a/otra/hoja_barcodes.tsv
