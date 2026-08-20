@@ -133,10 +133,13 @@ A TSV with a `SampleID` column matching the barcode-sheet names
 becomes a sample variable; categorical ones are automatically tested with
 PERMANOVA.
 
-**Use the mock community (`F4R3`)** to validate the run: expected vs observed
-composition. **The negative control (`F4R4`)** should fall below `--min_reads`
-and be excluded; if it does not, investigate contamination before interpreting
-anything.
+**Use the mock community (`F4R3`)** to validate the run: it is the
+ZymoBIOMICS Microbial Community Standard (Zymo D6300), and with ITS primers
+only its two yeasts amplify — the expected result is *Saccharomyces
+cerevisiae* + *Cryptococcus neoformans* and nothing else (see
+docs/USAGE.en.md). **The blank (`F4R4`)** should fall below `--min_reads`
+and be excluded; if it does not, investigate contamination before
+interpreting anything.
 
 ## Requirements
 

@@ -13,5 +13,5 @@ F3R3	S11	group_c	3
 F3R4	S12	group_c	4
 F4R1	S13	group_d	1
 F4R2	S14	group_d	2
-F4R3	MockCom	control	1	mock community
-F4R4	neg	control	1	negative control
+F4R3	MockCom	control	1	ZymoBIOMICS Microbial Community Standard (Zymo D6300)
+F4R4	neg	control	1	blank (negative control)

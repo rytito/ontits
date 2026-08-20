@@ -100,10 +100,17 @@ Identical to ont16s: `standard`, `slurm`, `vsc_wice`, `vsc_genius`, `conda`,
 1. **`results/02_demux/demux_stats.tsv`** — first. Reads per sample,
    `unassigned_*` (missing one of the two barcodes) and `invalid_*` (unused
    combination = measured index hopping).
-2. **Mock community (`F4R3`)** — expected vs observed composition validates
-   primers, demux and database at once.
-3. **Negative control (`F4R4`)** — should fall below `--min_reads` and be
-   excluded from the phyloseq object. If not: contamination.
+2. **Mock community (`F4R3`)** — ZymoBIOMICS Microbial Community Standard
+   (Zymo D6300): 8 bacteria (12% gDNA each) + 2 yeasts (2% each). With ITS
+   primers **only the yeasts amplify**, so the expected result is
+   essentially *Saccharomyces cerevisiae* and *Cryptococcus neoformans* and
+   nothing else. Their ratio will not be 50/50 — rDNA copy number differs
+   between species, and *C. neoformans* is tough to lyse (thick wall); its
+   complete absence points to an extraction problem, not a sequencing one.
+   Any OTHER fungal taxon in the mock is contamination or measured index
+   hopping.
+3. **Blank (`F4R4`)** — should fall below `--min_reads` and be excluded
+   from the phyloseq object. If not: contamination.
 4. **`07_phyloseq/<db>/uncharacterised_fraction.tsv`** — per-sample
    UNITE "unidentified"/SH fraction. In understudied systems this fraction is
    a result, not an error.

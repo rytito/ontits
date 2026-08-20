@@ -147,10 +147,12 @@ F4R3	MockCom	control	1
 
 Sin `--metadata` el pipeline se detiene después de `06_tables`.
 
-**Usa la comunidad mock (`F4R3`)** para validar la corrida: composición
-esperada vs. observada. **El control negativo (`F4R4`)** debe caer por debajo
-de `--min_reads` y quedar excluido; si no, investiga contaminación antes de
-interpretar nada.
+**Usa la comunidad mock (`F4R3`)** para validar la corrida: es el
+ZymoBIOMICS Microbial Community Standard (Zymo D6300), y con primers ITS
+solo sus dos levaduras amplifican — el resultado esperado es *Saccharomyces
+cerevisiae* + *Cryptococcus neoformans* y nada más (ver docs/USAGE.md).
+**El blanco (`F4R4`)** debe caer por debajo de `--min_reads` y quedar
+excluido; si no, investiga contaminación antes de interpretar nada.
 
 ## Requisitos
 
