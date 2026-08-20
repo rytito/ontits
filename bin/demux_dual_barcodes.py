@@ -134,8 +134,11 @@ def main():
             n = count_reads(src)
             sample = combos.get((fid, rid))
             if sample:
+                # .raw.fastq: el nombre debe diferir del F1R1.fastq que
+                # escribe CHOPPER_FILTER -- con stageInMode symlink, un
+                # redirect sobre el mismo nombre truncaría este archivo.
                 if src.exists():
-                    src.rename(outdir / f"{sample}.fastq")
+                    src.rename(outdir / f"{sample}.raw.fastq")
                 stats.append((sample, f"{fid}-{rid}", n))
             elif n:
                 # combinación no usada en la hoja: index hopping u error
