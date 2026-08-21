@@ -1,0 +1,17 @@
+barcode	SampleID	description
+barcode01	S01	sample 1
+barcode02	S02	sample 2
+barcode03	S03	sample 3
+barcode04	S04	sample 4
+barcode05	S05	sample 5
+barcode06	S06	sample 6
+barcode07	S07	sample 7
+barcode08	S08	sample 8
+barcode09	S09	sample 9
+barcode10	S10	sample 10
+barcode11	S11	sample 11
+barcode12	S12	sample 12
+barcode13	S13	sample 13
+barcode14	S14	sample 14
+barcode15	MockCom	mock: ZymoBIOMICS Microbial Community Standard (Zymo D6300)
+barcode16	neg	blank (negative control)

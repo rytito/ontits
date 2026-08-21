@@ -57,10 +57,18 @@ def helpMessage() {
       --model         Modelo de Dorado [${params.model}]
       --max_reads     Tope de lecturas (pruebas) [${params.max_reads ?: 'ninguno'}]
 
-    Demultiplexado (dual-index con cutadapt):
-      --barcodes           Hoja TSV de barcodes [assets/barcodes.tsv]
+    Demultiplexado:
+      --demux_mode         dual_index (Golay en primers, cutadapt) |
+                           ont_kit (barcodes del kit + dorado demux)
+                           [${params.demux_mode}]
+      --barcodes           Hoja dual_index [assets/barcodes.tsv]
+      --kit                Kit para ont_kit [${params.kit}]
+      --ont_barcode_map    Hoja barcode->muestra para ont_kit
+                           [assets/ont_barcode_map.tsv]
+      --barcode_both_ends  Exigir barcode en ambos extremos (ont_kit) [${params.barcode_both_ends}]
       --fwd_primer         Primer forward [${params.fwd_primer}]
       --rev_primer         Primer reverse [${params.rev_primer}]
+      --fwd_tag/--rev_tag  Tags universales ONT (ont_kit; ver docs/PRIMERS_ONT_RA.md)
       --demux_error_rate   Tasa de error de cutadapt [${params.demux_error_rate}]
       --demux_min_overlap  Solapamiento mínimo barcode+primer [${params.demux_min_overlap}]
 
@@ -90,6 +98,32 @@ def helpMessage() {
 // config o params-file llegan tipados. Convierte antes de comparar números.
 def asInt(v) {
     return v == null ? 0 : v.toString().toInteger()
+}
+
+// Complemento reverso con soporte IUPAC, para construir los adaptadores 3'
+// de cutadapt a partir de los primers/tags declarados en params.
+def revComp(s) {
+    def M = ['A':'T','C':'G','G':'C','T':'A','U':'A','R':'Y','Y':'R','S':'S',
+             'W':'W','K':'M','M':'K','B':'V','V':'B','D':'H','H':'D','N':'N']
+    return s.toUpperCase().reverse().collect { M.get(it, 'N') }.join('')
+}
+
+// Dorado reconstruye el árbol de MinKNOW desde los metadatos del POD5:
+//   <experiment>/<sample_id>/<run_id>/bam_pass/barcodeNN/*.bam
+// sample_id suele ser literalmente "unknown". Nunca uses glob con ruta fija.
+def barcodeOf(f) {
+    def m = (f.toString() =~ /(barcode\d+|unclassified)/)
+    return m ? m[0][1] : 'unknown'
+}
+
+// assets/ont_barcode_map.tsv -> [barcodeNN: SampleID]
+def readBarcodeMap(f) {
+    def m = [:]
+    f.readLines().drop(1).each { line ->
+        def bits = line.trim().split('\t')
+        if( bits.size() >= 2 ) m[bits[0]] = bits[1]
+    }
+    return m
 }
 
 // "unite:/ruta,unite_all:/ruta" -> canal de [nombre, ruta]
@@ -202,6 +236,81 @@ process CUTADAPT_DEMUX {
         --error-rate ${params.demux_error_rate} \\
         --min-overlap ${params.demux_min_overlap} \\
         --threads ${task.cpus}
+    """
+}
+
+/* ------------------------------------------------------------------ *
+ *  Demultiplexado modo ont_kit (SQK-RPB114.24 y afines)
+ * ------------------------------------------------------------------ */
+
+process DORADO_DEMUX {
+    label 'cpu_high'
+    publishDir "${params.outdir}/02_demux", mode: 'copy', pattern: '**summary*.txt'
+
+    input:
+    path bam
+
+    output:
+    path 'demux/**/*.bam',         emit: bams
+    path 'demux/**summary*.txt',   emit: summary, optional: true
+
+    script:
+    def both = params.barcode_both_ends?.toString()?.toBoolean() ? '--barcode-both-ends' : ''
+    """
+    dorado demux ${bam} \\
+        --output-dir demux \\
+        --kit-name ${params.kit} \\
+        ${both} \\
+        --emit-summary \\
+        --threads ${task.cpus}
+
+    find demux -name '*.bam' | xargs -r samtools quickcheck -u -v
+    echo "BAMs del demux verificados"
+    """
+}
+
+process BAM_TO_FASTQ_BC {
+    label 'cpu_low'
+    tag { barcode }
+
+    input:
+    tuple val(barcode), path(bams)
+
+    output:
+    tuple val(barcode), path("${barcode}.raw.fastq"), emit: fastq
+
+    script:
+    """
+    for f in ${bams}; do
+        samtools fastq -T '*' \$f
+    done > ${barcode}.raw.fastq
+    """
+}
+
+process CUTADAPT_TRIM {
+    label 'cpu_low'
+    tag { sample }
+    publishDir "${params.outdir}/02_demux/trim_logs", mode: 'copy', pattern: '*.log'
+
+    input:
+    tuple val(sample), path(fastq)
+
+    output:
+    tuple val(sample), path("${sample}.trim.fastq"), emit: fastq
+    path "${sample}.cutadapt.log"
+
+    script:
+    // Tras dorado demux la lectura conserva [tagF][primerF]...rc([tagR][primerR]).
+    // --revcomp orienta; --discard-untrimmed exige el primer F (las lecturas
+    // sin sitio de primer no son amplicones).
+    def a5 = "${params.fwd_tag}${params.fwd_primer}"
+    def a3 = revComp("${params.rev_tag}${params.rev_primer}")
+    """
+    cutadapt -j ${task.cpus} \\
+        -e ${params.demux_error_rate} -O 20 --revcomp \\
+        --discard-untrimmed -m 50 \\
+        -g ${a5} -a ${a3} \\
+        -o ${sample}.trim.fastq ${fastq} > ${sample}.cutadapt.log
     """
 }
 
@@ -374,18 +483,47 @@ workflow DEMUX {
     ch_bam
 
     main:
-    BAM_TO_FASTQ(ch_bam)
-    CUTADAPT_DEMUX(
-        BAM_TO_FASTQ.out.fastq,
-        file(params.barcodes, checkIfExists: true)
-    )
+    if( params.demux_mode == 'dual_index' ) {
+        // Diseño original: barcodes Golay dual-index en los primers.
+        BAM_TO_FASTQ(ch_bam)
+        CUTADAPT_DEMUX(
+            BAM_TO_FASTQ.out.fastq,
+            file(params.barcodes, checkIfExists: true)
+        )
 
-    // demux/ contiene un FASTQ por SampleID de la hoja de barcodes. Las
-    // lecturas sin ambos barcodes quedan en unassigned/ dentro de work/
-    // y contabilizadas en demux_stats.tsv, pero fuera del análisis.
-    ch_samples = CUTADAPT_DEMUX.out.fastqs
-        .flatten()
-        .map { f -> tuple(f.simpleName, f) }
+        // demux/ contiene un FASTQ por SampleID de la hoja de barcodes. Las
+        // lecturas sin ambos barcodes quedan en unassigned/ dentro de work/
+        // y contabilizadas en demux_stats.tsv, pero fuera del análisis.
+        ch_samples = CUTADAPT_DEMUX.out.fastqs
+            .flatten()
+            .map { f -> tuple(f.simpleName, f) }
+    }
+    else if( params.demux_mode == 'ont_kit' ) {
+        // Diseño RA: primers KYO2 con tags universales + barcodes del kit
+        // (SQK-RPB114.24). Demux por barcode nativo con dorado, luego
+        // recorte de tags+primers con cutadapt. Ver docs/PRIMERS_ONT_RA.md.
+        DORADO_DEMUX(ch_bam)
+
+        ch_grouped = DORADO_DEMUX.out.bams
+            .flatten()
+            .map { f -> tuple(barcodeOf(f), f) }
+            .filter { bc, f -> bc != 'unclassified' && bc != 'unknown' }
+            .groupTuple()
+
+        BAM_TO_FASTQ_BC(ch_grouped)
+
+        // barcodeNN -> SampleID; los barcodes fuera de la hoja se descartan.
+        bcmap = readBarcodeMap(file(params.ont_barcode_map, checkIfExists: true))
+        ch_named = BAM_TO_FASTQ_BC.out.fastq
+            .filter { bc, f -> bcmap.containsKey(bc) }
+            .map { bc, f -> tuple(bcmap[bc], f) }
+
+        CUTADAPT_TRIM(ch_named)
+        ch_samples = CUTADAPT_TRIM.out.fastq
+    }
+    else {
+        error "Valor de --demux_mode desconocido: '${params.demux_mode}'. Usa dual_index | ont_kit"
+    }
 
     CHOPPER_FILTER(ch_samples)
 

@@ -43,8 +43,17 @@ en Nanopore:
   [`assets/barcodes.tsv`](assets/barcodes.tsv). En la corrida original,
   `F4R3` es la comunidad mock y `F4R4` el control negativo.
 
-Por eso `dorado demux` no aplica: el demultiplexado corre con **cutadapt** en
-dos rondas. La ronda 1 orienta cada lectura (`--revcomp`) y la asigna por
+> **Dos diseños de librería soportados** (`--demux_mode`):
+> `dual_index` (por defecto) es el diseño de arriba. `ont_kit` es el
+> **rediseño compatible con Rapid Adapter**: primers KYO2 con tags
+> universales ONT + barcodes del Rapid PCR Barcoding Kit (SQK-RPB114.24),
+> demultiplexado con `dorado demux` y recorte con cutadapt. RA no puede
+> acoplarse a amplicones planos — ver
+> [`docs/PRIMERS_ONT_RA.md`](docs/PRIMERS_ONT_RA.md) para el rediseño de
+> primers y el porqué.
+
+Para el diseño dual-index, `dorado demux` no aplica: el demultiplexado corre
+con **cutadapt** en dos rondas. La ronda 1 orienta cada lectura (`--revcomp`) y la asigna por
 `barcodeF+primerF` recortando el 5'; la ronda 2 la asigna por
 `rc(barcodeR+primerR)` recortando el 3'. Como los mismos 4 Golay van en ambos
 extremos, un barcode aislado no identifica el extremo — el primer adyacente sí,
