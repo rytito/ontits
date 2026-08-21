@@ -95,6 +95,48 @@ este modo (S01…S14, MockCom, neg).
 
 ---
 
+## Alternativa B: reusar los primers largos Illumina ya sintetizados
+
+Si ya tienes los oligos dual-index largos (P5/P7 + Golay + KYO2), no hace
+falta retirarlos: una **segunda PCR de pocos ciclos** injerta los tags
+universales sobre los extremos P5/P7 de los amplicones ya barcodeados.
+
+| Nombre | Secuencia 5'→3' | nt |
+|---|---|---|
+| P5_ONTtag_F | `TTTCTGTTGGTGCTGATATTGCAATGATACGGCGACCACCGAGATCTACAC` | 51 |
+| P7_ONTtag_R | `ACTTGCCTGTCGCTCTATCTTCCAAGCAGAAGACGGCATACGAGAT` | 46 |
+
+Estructura: `[tag universal ONT (22 nt)]-[P5 o P7 de Illumina]`. Las
+porciones 3' son los primers estándar de amplificación de librerías
+Illumina: priman en los extremos exactos del amplicón de la PCR1 y copian
+la construcción completa, barcodes Golay incluidos.
+
+Flujo:
+
+1. **PCR1 por muestra** con los primers largos existentes (sin cambios).
+2. **Pool** de las 16 muestras + limpieza SPRI 0.8x (los primers/dímeros
+   residuales de la PCR1 también se etiquetarían).
+3. **PCR2 sobre el pool, 6–10 ciclos**: los dos primers de arriba + UN solo
+   primer barcodeado del kit RPB114.24 (p. ej. RLB01) — enfoque de cuatro
+   primers sobre el pool. Solo se consume un barcode del kit por corrida;
+   la identidad de muestra ya viaja en los Golay. Pocos ciclos: la PCR
+   sobre un pool mixto puede generar quimeras entre muestras (aparecerían
+   como `invalid_*` en demux_stats.tsv).
+4. **Limpieza → Qubit → RA en ADB → carga.** Construcción final ≈ 650–700
+   pb; 50 fmol ≈ **21–23 ng**, cuantificados sobre la librería final.
+
+Análisis: `--demux_mode dual_index` (el por defecto) sin ningún cambio —
+el demux por Golay ignora la secuencia extra fuera de los barcodes.
+
+## English summary — Alternative B
+
+Reuse the existing long Illumina dual-index primers: PCR1 per sample as
+designed, pool + 0.8x SPRI, then a 6–10-cycle PCR2 on the pool with
+`TTTCTGTTGGTGCTGATATTGC`+P5 (51 nt) and `ACTTGCCTGTCGCTCTATCTTC`+P7
+(46 nt) plus a single RPB114.24 barcoded primer for RA attachment. Load
+50 fmol (~21–23 ng at ~650–700 bp). Analyse with the default
+`--demux_mode dual_index`; sample identity stays in the Golay indices.
+
 ## English summary
 
 The Illumina dual-index constructs are retired. ONT's Rapid Adapter cannot
